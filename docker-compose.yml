@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/demodb
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+    networks:
+      - demo-network
+
+  postgres:
+    image: postgres:14.1-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=demodb
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - demo-network
+
+networks:
+  demo-network:
+    driver: bridge
+
+volumes:
+  postgres-data: 
