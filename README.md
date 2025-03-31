@@ -1,6 +1,7 @@
 # Spring Boot PostgreSQL Docker Demo
 
 Ce projet est une application Spring Boot avec PostgreSQL, conteneurisée via Docker.
+Sprint Initializer a été  utilisé pour initiliaser le projet.
 
 ## Prérequis
 
@@ -10,24 +11,20 @@ Ce projet est une application Spring Boot avec PostgreSQL, conteneurisée via Do
 ## Structure du projet
 
 ```
-spring-postgres-demo/
-├── src/
-│   ├── main/
-│   │   ├── java/
-│   │   │   └── com/
-│   │   │       └── example/
-│   │   │           └── demo/
-│   │   │               ├── controller/
-│   │   │               ├── model/
-│   │   │               ├── repository/
-│   │   │               ├── service/
-│   │   │               └── DemoApplication.java
-│   │   └── resources/
-│   │       └── application.properties
-├── Dockerfile
-├── docker-compose.yml
-├── pom.xml
-└── README.md
+├── src/                     # Code source du projet
+│   ├── main/                # Code source principal de l'application
+│   │   ├── java/            # Classes Java de l'application
+│   │   └── resources/       # Ressources nécessaires à l'application
+│   └── test/                # Code source des tests
+├── .gitignore               # Liste des fichiers à ignorer par Git
+├── docker-compose.yml       # Configuration Docker Compose
+├── Dockerfile               # Instructions pour la création de l'image Docker
+├── HELP.md                  # Aide générée par Spring Initializer
+├── mvnw                     # Wrapper Maven pour Linux/Mac
+├── mvnw.cmd                 # Wrapper Maven pour Windows
+├── pom.xml                  # Configuration du projet Maven
+└── README.md                # Documentation du projet
+
 ```
 
 ## Démarrage rapide
@@ -43,26 +40,20 @@ L'application sera accessible sur http://localhost:8080
 
 ## API Endpoints
 
-L'application expose les endpoints REST suivants pour gérer les produits :
 
-- `GET /api/products` - Récupérer tous les produits
-- `GET /api/products/{id}` - Récupérer un produit par son ID
-- `POST /api/products` - Créer un nouveau produit
-- `PUT /api/products/{id}` - Mettre à jour un produit existant
-- `DELETE /api/products/{id}` - Supprimer un produit
 
 ## Exemple d'utilisation avec cURL
 
-### Créer un produit
+### Créer un 
 ```bash
-curl -X POST http://localhost:8080/api/products \
+curl -X POST http://localhost:8080/api/**** \
   -H "Content-Type: application/json" \
   -d '{"name":"Laptop", "description":"Un ordinateur portable puissant", "price":1299.99}'
 ```
 
-### Récupérer tous les produits
+### Récupérer tous les *******
 ```bash
-curl -X GET http://localhost:8080/api/products
+curl -X GET http://localhost:8080/api/*****
 ```
 
 ## Arrêter l'application
