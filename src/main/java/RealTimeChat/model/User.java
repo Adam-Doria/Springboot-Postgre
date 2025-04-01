@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 
 // Pour info les getter et les setters sont générés automatiquement par spring
 @Entity
-@Table(name="user")
+@Table(name="users")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
