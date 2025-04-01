@@ -36,10 +36,11 @@ Sprint Initializer a été  utilisé pour initiliaser le projet.
 docker-compose up -d
 ```
 
-L'application sera accessible sur http://localhost:8080
+L'application sera accessible sur http://localhost:8080/swagger-ui/index.html
 
 ## API Endpoints
 
+La documentation de l'application  sera accessible sur http://localhost:8080
 
 
 ## Exemple d'utilisation avec cURL
@@ -51,9 +52,9 @@ curl -X POST http://localhost:8080/api/**** \
   -d '{"name":"Laptop", "description":"Un ordinateur portable puissant", "price":1299.99}'
 ```
 
-### Récupérer tous les *******
+### Récupérer tous les utilisateurs en ligne
 ```bash
-curl -X GET http://localhost:8080/api/*****
+curl -X GET http://localhost:8080/api/users/online
 ```
 
 ## Arrêter l'application
