@@ -48,8 +48,9 @@ public class UserService {
     }
 
     public User updateUserOnlineStatus(Integer userId, boolean isOnline) {
-        Optional<User> user = userRepository.findById(userId);
-        if (user.isPresent()) {
+        Optional<User> userOptional = userRepository.findById(userId);
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
             user.setIsOnline(isOnline);
             user.setLastSeenAt(LocalDateTime.now());
             user.setUpdatedAt(LocalDateTime.now());

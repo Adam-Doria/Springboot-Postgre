@@ -30,4 +30,6 @@ public class User {
     private LocalDateTime lastSeenAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+
 }
