@@ -42,9 +42,10 @@ public class Message {
     @Schema(description = "Salon de discussion où le message a été envoyé (null pour messages privés)")
     private ChatRoom chatRoom;
 
-    @Column(name = "private_conversation_id")
-    @Schema(description = "ID de la conversation privée (null pour messages de salon)")
-    private Integer privateConversationId;
+    @ManyToOne
+    @JoinColumn(name = "private_conversation_id")
+    @Schema(description = "Conversation privée à laquelle le message appartient (null pour messages de salon)")
+    private PrivateConversation privateConversation;
 
 
     @Column(name = "is_edited")
@@ -87,7 +88,7 @@ public class Message {
             channelId = chatRoom.getId();
         }
 
-        if (chatRoom == null && recipient == null && privateConversationId == null) {
+        if (chatRoom == null && recipient == null && privateConversation == null) {
             throw new IllegalStateException("Un message doit avoir au moins un destinataire (salon de discussion ou utilisateur)");
         }
     }
