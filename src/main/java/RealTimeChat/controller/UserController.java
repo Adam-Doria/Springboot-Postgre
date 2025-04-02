@@ -26,17 +26,6 @@ public class UserController {
     @Autowired
     private UserService userService ;
 
-//@TODO move this route inside authController once it has been created
-    @PostMapping
-    public ResponseEntity<User> registerUser(@RequestBody User user) {
-        try {
-            User registeredUser = userService.registerUser(user);
-            return new ResponseEntity<>(registeredUser, HttpStatus.CREATED);
-        } catch (RuntimeException e) {
-            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
-        }
-    }
-
     @Operation(summary = "Récupérer un utilisateur par son nom d'utilisateur",
             description = "Renvoie les détails d'un utilisateur basé sur son nom d'utilisateur")
     @ApiResponses(value = {
