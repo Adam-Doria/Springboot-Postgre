@@ -33,4 +33,6 @@ public class ChatRoomService {
     public void deleteChatRoom(Integer id) {
         chatRoomRepository.deleteById(id);
     }
+
+    public void getAllUsersByChatRoom(Integer id) {chatRoomRepository}
 }

@@ -1,6 +1,7 @@
 package RealTimeChat.controller;
 
 import RealTimeChat.model.ChatRoom;
+import RealTimeChat.model.User;
 import RealTimeChat.service.ChatRoomService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -59,6 +60,21 @@ public class ChatRoomController {
         try {
             chatRoomService.deleteChatRoom(id);
             return new ResponseEntity<>(HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @Operation(summary = "Lister tous les utilisateurs du salon")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Users and chat room found"),
+            @ApiResponse(responseCode = "404", description = "Chat room not found")
+    })
+    @GetMapping("/{id}/users")
+    public ResponseEntity<List<User>> getAllUsersByChatRooms(@PathVariable Integer id) {
+        try {
+            List<User> users = chatRoomService.getAllUsersByChatRoom(id);
+            return new ResponseEntity<>(users, HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
