@@ -123,3 +123,5 @@ INSERT INTO chat_room_member (user_id, chat_room_id)
 VALUES (10, 5),
        (1, 5),
        (6, 5);
+
+SELECT setval('users_id_seq', (SELECT MAX(id) FROM users));

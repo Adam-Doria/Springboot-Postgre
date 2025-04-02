@@ -3,6 +3,7 @@ package RealTimeChat.service;
 import RealTimeChat.model.User;
 import RealTimeChat.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -14,8 +15,11 @@ public class UserService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private BCryptPasswordEncoder passwordEncoder;
+
     //****Query****
-    public Optional<User> findUserByUsername (String username) {
+    public Optional<User> findUserByUsername(String username) {
         return userRepository.findByUsername(username);
     }
 
@@ -40,6 +44,10 @@ public class UserService {
         if (isEmailAlreadyRegistered(user.getEmail())) {
             throw new RuntimeException("Cet email est déjà utilisé");
         }
+
+        String rawPassword = user.getPassword();
+        user.setPassword(passwordEncoder.encode(rawPassword));
+
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
         user.setIsOnline(false);
@@ -57,6 +65,10 @@ public class UserService {
             return userRepository.save(user);
         }
         throw new RuntimeException("Utilisateur non trouvé avec l'ID: " + userId);
+    }
+
+    public boolean verifyPassword(User user, String rawPassword) {
+        return passwordEncoder.matches(rawPassword, user.getPassword());
     }
 }
 
