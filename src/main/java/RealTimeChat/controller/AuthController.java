@@ -1,6 +1,8 @@
 package RealTimeChat.controller;
 
+import RealTimeChat.dto.JwtResponse;
 import RealTimeChat.model.User;
+import RealTimeChat.security.JwtUtils;
 import RealTimeChat.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -11,6 +13,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -24,6 +31,12 @@ public class AuthController {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private JwtUtils jwtUtils;
+
     @Operation(summary = "Enregistrer un nouvel utilisateur",
             description = "Enregistre un nouvel utilisateur avec un mot de passe hashé")
     @ApiResponses(value = {
@@ -36,10 +49,19 @@ public class AuthController {
         try {
             User registeredUser = userService.registerUser(user);
 
-            // Retourner l'utilisateur sans exposer le mot de passe hashé
-            registeredUser.setPassword("[PROTECTED]");
+            // Générer un token JWT pour le nouvel utilisateur, en gros ca lui prmet de se connecter direct quand
+            // il n'a pas besoin de se ré-authentifier
+            String token = jwtUtils.generateToken(registeredUser.getId());
 
-            return new ResponseEntity<>(registeredUser, HttpStatus.CREATED);
+            JwtResponse response = new JwtResponse(
+                    token,
+                    registeredUser.getId(),
+                    registeredUser.getUsername(),
+                    registeredUser.getDisplayName(),
+                    registeredUser.getIsOnline()
+            );
+
+            return new ResponseEntity<>(response, HttpStatus.CREATED);
         } catch (RuntimeException e) {
             Map<String, Object> response = new HashMap<>();
             response.put("error", e.getMessage());
@@ -64,24 +86,35 @@ public class AuthController {
             return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         }
 
-        return userService.findUserByUsername(username)
-                .filter(user -> userService.verifyPassword(user, password))
-                .map(user -> {
-                    userService.updateUserOnlineStatus(user.getId(), true);
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(username, password));
 
-                    Map<String, Object> response = new HashMap<>();
-                    response.put("message", "Connexion réussie");
+            // Si l'authentification réussit, générer un token JWT
+            User user = userService.findUserByUsername(username).orElseThrow();
+            userService.updateUserOnlineStatus(user.getId(), true);
 
-                    user.setPassword("[PROTECTED]");
-                    response.put("user", user);
+            String token = jwtUtils.generateToken(user.getId());
 
-                    return new ResponseEntity<>(response, HttpStatus.OK);
-                })
-                .orElseGet(() -> {
-                    Map<String, Object> response = new HashMap<>();
-                    response.put("error", "Nom d'utilisateur ou mot de passe incorrect");
-                    return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
-                });
+            // Créer la réponse avec le token et les infos utilisateur
+            JwtResponse response = new JwtResponse(
+                    token,
+                    user.getId(),
+                    user.getUsername(),
+                    user.getDisplayName(),
+                    true
+            );
+
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (DisabledException e) {
+            Map<String, String> response = new HashMap<>();
+            response.put("error", "Compte utilisateur désactivé");
+            return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+        } catch (BadCredentialsException e) {
+            Map<String, String> response = new HashMap<>();
+            response.put("error", "Nom d'utilisateur ou mot de passe incorrect");
+            return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+        }
     }
 
     @Operation(summary = "Déconnecter un utilisateur",
