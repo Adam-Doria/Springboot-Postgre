@@ -1,6 +1,8 @@
 package RealTimeChat.service;
 
 import RealTimeChat.model.ChatRoom;
+import RealTimeChat.model.User;
+import RealTimeChat.repository.ChatRoomMemberRepository;
 import RealTimeChat.repository.ChatRoomRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -13,6 +15,8 @@ public class ChatRoomService {
 
     @Autowired
     private ChatRoomRepository chatRoomRepository;
+    @Autowired
+    private ChatRoomMemberRepository chatRoomMemberRepository;
 
     public ChatRoom createChatRoom(ChatRoom chatRoom) {
         return chatRoomRepository.save(chatRoom);
@@ -34,5 +38,5 @@ public class ChatRoomService {
         chatRoomRepository.deleteById(id);
     }
 
-    public void getAllUsersByChatRoom(Integer id) {chatRoomRepository}
+    public List<User> getAllUsersByChatRoom(Integer id) {return chatRoomMemberRepository.findUsersByChatRoomId(id);}
 }
