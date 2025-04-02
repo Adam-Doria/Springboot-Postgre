@@ -21,9 +21,11 @@ public class WebSocketConfig {
         config.setHostname(host);
         config.setPort(port);
 
+
         // CORS => pour pouvoir se connecter depuis n'importe ou, j'ai choisi de mettre all
         //potentiellement on va présenter ca  à distance , j'ai pas envie que ça foire à cause de CORS trop rigides
         config.setOrigin("*");
+        config.setAllowHeaders("*");
 
 
         // Création du serveur avec la configuration
