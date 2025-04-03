@@ -1,5 +1,6 @@
 package RealTimeChat.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -45,6 +46,7 @@ public class ChatRoom {
 
     @OneToMany(mappedBy = "chatRoom", cascade = CascadeType.ALL, orphanRemoval = true)
     @Schema(description = "Liste des messages associés à ce salon")
+    @JsonIgnore
     private List<Message> messages = new ArrayList<>();
 
     /**
