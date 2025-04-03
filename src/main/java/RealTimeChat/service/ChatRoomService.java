@@ -56,6 +56,21 @@ public class ChatRoomService {
         chatRoomRepository.deleteById(id);
     }
 
+    /**
+     * Vérifie si un utilisateur est l'administrateur d'un salon de discussion
+     * @param chatRoomId L'identifiant du salon de discussion
+     * @param userId L'identifiant de l'utilisateur
+     * @return true si l'utilisateur est l'administrateur, false sinon
+     */
+    public boolean isUserChatRoomAdmin(Integer chatRoomId, Integer userId) {
+        Optional<ChatRoom> chatRoomOpt = getChatRoomById(chatRoomId);
+        if (chatRoomOpt.isPresent()) {
+            ChatRoom chatRoom = chatRoomOpt.get();
+            return chatRoom.getAdminId() != null && chatRoom.getAdminId().equals(userId);
+        }
+        return false;
+    }
+
     public List<User> getAllUsersByChatRoom(Integer id) {return chatRoomMemberRepository.findUsersByChatRoomId(id);}
 
     public ChatRoomMember addChatRoomMember(Integer chatRoomId, Integer userId) {

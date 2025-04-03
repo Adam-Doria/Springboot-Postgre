@@ -113,17 +113,29 @@ public class MessageController {
         }
     }
 
-    @Operation(summary = "Supprimer un message", description = "Supprime un message en fonction de son ID")
+    @Operation(summary = "Supprimer un message", description = "Supprime un message en fonction de son ID. L'utilisateur doit être l'expéditeur du message ou l'administrateur du salon.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Message supprimé avec succès"),
+            @ApiResponse(responseCode = "403", description = "Non autorisé - Seul l'expéditeur ou l'admin du salon peut supprimer ce message"),
             @ApiResponse(responseCode = "404", description = "Message non trouvé")
     })
     @DeleteMapping("/{messageId}")
     public ResponseEntity<Void> deleteMessage(@PathVariable Integer messageId) {
         try {
+            // Récupérer l'ID de l'utilisateur à partir du token JWT
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            Integer userId = Integer.parseInt(authentication.getName());
+            
+            // Vérifier si l'utilisateur est autorisé à supprimer ce message
+            if (!messageService.canDeleteMessage(messageId, userId)) {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
+            
+            // Si l'utilisateur est autorisé, supprimer le message
             messageService.deleteMessage(messageId);
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (Exception e) {
+            e.printStackTrace();
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
