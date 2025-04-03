@@ -1,6 +1,8 @@
 package RealTimeChat.controller;
 
+import RealTimeChat.dto.ChatRoomMemberRequest;
 import RealTimeChat.model.ChatRoom;
+import RealTimeChat.model.ChatRoomMember;
 import RealTimeChat.model.User;
 import RealTimeChat.service.ChatRoomService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -70,13 +72,29 @@ public class ChatRoomController {
             @ApiResponse(responseCode = "200", description = "Users and chat room found"),
             @ApiResponse(responseCode = "404", description = "Chat room not found")
     })
-    @GetMapping("/{id}/users")
+    @GetMapping("/{id}/user")
     public ResponseEntity<List<User>> getAllUsersByChatRooms(@PathVariable Integer id) {
         try {
             List<User> users = chatRoomService.getAllUsersByChatRoom(id);
             return new ResponseEntity<>(users, HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @Operation(summary = "Ajouter un utilisateur à un salon")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Chat room member added successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid data")
+    })
+    @PostMapping("/{id}/user")
+    public ResponseEntity<List<User>> addUserToChatRooms(@PathVariable Integer id, ChatRoomMemberRequest request) {
+        try {
+            ChatRoomMember chatRoomMember = chatRoomService.addChatRoomMember(id, request.getUserId());
+            List<User> users = chatRoomService.getAllUsersByChatRoom(id);
+            return new ResponseEntity<>(users, HttpStatus.CREATED);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
     }
 }
