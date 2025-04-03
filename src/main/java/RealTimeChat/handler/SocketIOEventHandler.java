@@ -193,9 +193,9 @@ public class SocketIOEventHandler {
 
         // Préparation du payload avec le nom de l'expéditeur
         HashMap<String, Object> payload = new HashMap<>();
-        payload.put("id", savedMessage.getId());
-        payload.put("content", savedMessage.getContent());
-        payload.put("senderName", savedMessage.getSender() != null ? savedMessage.getSender().getUsername() : "Unknown");
+        payload.put("Id", savedMessage.getId());
+        payload.put("Content", savedMessage.getContent());
+        payload.put("SenderName", savedMessage.getSender() != null ? savedMessage.getSender().getUsername() : "Unknown");
 
         // Diffusion du message dans la salle (room)
         String roomId = savedMessage.getChannelId().toString();
