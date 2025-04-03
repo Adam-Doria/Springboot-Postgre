@@ -1,5 +1,6 @@
 package RealTimeChat.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -42,6 +43,7 @@ public class PrivateConversation {
 
     @OneToMany(mappedBy = "privateConversation", cascade = CascadeType.ALL, orphanRemoval = true)
     @Schema(description = "Liste des messages associés à cette conversation privée")
+    @JsonIgnore
     private List<Message> messages = new ArrayList<>();
 
     @PrePersist
