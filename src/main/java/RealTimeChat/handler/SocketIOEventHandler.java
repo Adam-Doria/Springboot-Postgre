@@ -23,6 +23,7 @@ import org.springframework.stereotype.Component;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.HashMap;
 
 @Component
 public class SocketIOEventHandler {
@@ -160,34 +161,46 @@ public class SocketIOEventHandler {
 
     // Gestion des messages de salon
     private void handleChatRoomMessage(SocketIOClient client, Message message, AckRequest ackRequest) {
-        // Vérifier et compléter les informations du message pour un salon
-        if (message.getChatRoom() == null && message.getChannelId() != null) {
-            // Si seul channelId est fourni, récupérer le ChatRoom correspondant
-            Optional<ChatRoom> chatRoom = chatRoomService.getChatRoomById(message.getChannelId());
+        // Try to resolve chatRoom from channelId if needed
+        if (message.getChatRoom() == null && message.getChannelId() != null) {            Optional<ChatRoom> chatRoom = chatRoomService.getChatRoomById(message.getChannelId());
             if (chatRoom.isPresent()) {
                 message.setChatRoom(chatRoom.get());
             } else {
-                throw new IllegalArgumentException("Salon de discussion non trouvé avec l'ID: " + message.getChannelId());
+                System.out.println("❌ ChatRoom not found with ID: " + message.getChannelId());
+                throw new IllegalArgumentException("Chat room not found with ID: " + message.getChannelId());
             }
-        } else if (message.getChannelId() == null && message.getChatRoom() != null) {
-            // Si seul chatRoom est fourni, définir channelId pour la diffusion
-            message.setChannelId(message.getChatRoom().getId());
         }
 
-        // S'assurer que des informations privées ne sont pas mélangées
+        // Set channelId if only ChatRoom is set
+        if (message.getChannelId() == null && message.getChatRoom() != null) {
+            message.setChannelId(message.getChatRoom().getId());
+            System.out.println("ℹ️ Set channelId from chatRoom: " + message.getChannelId());
+        }
+
+        // Clean up private-related fields
         message.setRecipient(null);
         message.setPrivateConversation(null);
 
-        // Sauvegarder le message dans la base de données
+        // Save message to DB
         Message savedMessage = messageService.saveMessage(message);
+        // Broadcast to room
+        String roomId = savedMessage.getChannelId().toString();
+        System.out.println("📡 Broadcasting message to room: " + roomId);
+        HashMap<String, Object> payload = new HashMap<>();
+        payload.put("id", savedMessage.getId());
+        payload.put("content", savedMessage.getContent());
+        payload.put("senderName",
+                savedMessage.getSender() != null ? savedMessage.getSender().getUsername() : "Unknown");
 
-        // Diffuser le message à tous les clients dans la room
-        server.getRoomOperations(savedMessage.getChannelId().toString())
-                .sendEvent("new_message", savedMessage);
+        server.getRoomOperations(roomId.toString())
+                .sendEvent("new_message", payload);
 
-        // Accusé de réception
+        System.out.println("✅ Message broadcasted to room, message = " + payload);
+
+        // Acknowledge if needed
         if (ackRequest.isAckRequested()) {
             ackRequest.sendAckData(savedMessage);
+            System.out.println("📨 Ack sent");
         }
     }
 
