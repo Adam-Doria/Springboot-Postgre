@@ -19,7 +19,21 @@ public class ChatRoomService {
     private ChatRoomMemberRepository chatRoomMemberRepository;
 
     public ChatRoom createChatRoom(ChatRoom chatRoom) {
-        return chatRoomRepository.save(chatRoom);
+        // Affichons des logs pour déboguer
+        System.out.println("ChatRoomService - createChatRoom - adminId avant sauvegarde: " + chatRoom.getAdminId());
+        
+        // Vérifier que l'adminId est bien défini
+        if (chatRoom.getAdminId() == null) {
+            System.out.println("ChatRoomService - ATTENTION: adminId était null!");
+        }
+        
+        // Sauvegarde du salon
+        ChatRoom savedChatRoom = chatRoomRepository.save(chatRoom);
+        
+        // Vérifions après sauvegarde
+        System.out.println("ChatRoomService - createChatRoom - adminId après sauvegarde: " + savedChatRoom.getAdminId());
+        
+        return savedChatRoom;
     }
 
     public Optional<ChatRoom> getChatRoomById(Integer id) {
