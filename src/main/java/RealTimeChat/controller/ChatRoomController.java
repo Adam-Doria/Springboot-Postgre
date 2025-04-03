@@ -8,12 +8,16 @@ import RealTimeChat.service.ChatRoomService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 
 import java.util.List;
 import java.util.HashMap;
@@ -26,25 +30,52 @@ public class ChatRoomController {
     @Autowired
     private ChatRoomService chatRoomService;
 
+    @Setter
+    @Getter
+    public static class ChatRoomResponse {
+        @JsonProperty("Id")
+        private Integer id;
+
+        @JsonProperty("Name")
+        private String name;
+
+        @JsonProperty("Description")
+        private String description;
+
+        @JsonProperty("AdminId")
+        private Integer adminId;
+
+        public ChatRoomResponse(ChatRoom chatRoom) {
+            this.id = chatRoom.getId();
+            this.name = chatRoom.getName();
+            this.description = chatRoom.getDescription();
+            this.adminId = chatRoom.getAdminId();
+        }
+
+    }
     @Operation(summary = "Créer un salon de discussion")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Chat room created successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid data")
     })
+
     @PostMapping
-    public ResponseEntity<ChatRoom> createChatRoom(@RequestBody ChatRoom chatRoomRequest) {
+    public ResponseEntity<ChatRoomResponse> createChatRoom(@RequestBody ChatRoom chatRoomRequest) {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             Integer userId = Integer.parseInt(authentication.getName());
 
             ChatRoom chatRoom = new ChatRoom(
-                chatRoomRequest.getName(),
-                chatRoomRequest.getDescription(),
-                userId
+                    chatRoomRequest.getName(),
+                    chatRoomRequest.getDescription(),
+                    userId
             );
 
             ChatRoom created = chatRoomService.createChatRoom(chatRoom);
-            return new ResponseEntity<>(created, HttpStatus.CREATED);
+
+            ChatRoomResponse response = new ChatRoomResponse(created);
+
+            return new ResponseEntity<>(response, HttpStatus.CREATED);
         } catch (Exception e) {
             e.printStackTrace();
             return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
