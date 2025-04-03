@@ -1,6 +1,7 @@
 package RealTimeChat.controller;
 
 import RealTimeChat.model.User;
+import RealTimeChat.repository.UserRepository;
 import RealTimeChat.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -25,6 +26,8 @@ public class UserController {
 
     @Autowired
     private UserService userService ;
+    @Autowired
+    private UserRepository userRepository;
 
     @Operation(summary = "Récupérer un utilisateur par son nom d'utilisateur",
             description = "Renvoie les détails d'un utilisateur basé sur son nom d'utilisateur")
@@ -46,8 +49,8 @@ public class UserController {
             description = "Renvoie la liste des utilisateurs actuellement connectés")
     @ApiResponse(responseCode = "200", description = "Liste récupérée avec succès")
     @GetMapping("/online")
-    public ResponseEntity<List<User>> getOnlineUsers() {
-        List<User> onlineUsers = userService.findAllOnlineUsers();
+    public ResponseEntity<List<User>> getAllUsers() {
+        List<User> onlineUsers = userRepository.findAll();
         return new ResponseEntity<>(onlineUsers, HttpStatus.OK);
     }
 
