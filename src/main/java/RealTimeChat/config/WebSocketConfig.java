@@ -2,9 +2,14 @@ package RealTimeChat.config;
 
 import com.corundumstudio.socketio.SocketIOServer;
 import com.corundumstudio.socketio.Configuration;
+import com.corundumstudio.socketio.AuthorizationListener;
+import com.corundumstudio.socketio.HandshakeData;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
+
+import RealTimeChat.security.JwtUtils;
 
 @Component
 public class WebSocketConfig {
@@ -15,22 +20,36 @@ public class WebSocketConfig {
     @Value("${socket-server.port}")
     private Integer port;
 
+    @Autowired
+    private JwtUtils jwtUtils;
+
     @Bean
     public SocketIOServer socketIOServer() {
         Configuration config = new Configuration();
         config.setHostname(host);
         config.setPort(port);
-
-
-        // CORS => pour pouvoir se connecter depuis n'importe ou, j'ai choisi de mettre all
-        //potentiellement on va présenter ca  à distance , j'ai pas envie que ça foire à cause de CORS trop rigides
         config.setOrigin("*");
         config.setAllowHeaders("*");
 
+        // Ajout de l'authentification à la connexion
+        config.setAuthorizationListener(new AuthorizationListener() {
+            @Override
+            public boolean isAuthorized(HandshakeData data) {
+                // Récupération du token depuis les paramètres de la requête
+                String token = data.getSingleUrlParam("token");
+                if (token != null) {
+                    try {
+                        Integer userId = jwtUtils.extractUserId(token);
+                        return userId != null;
+                    } catch (Exception e) {
+                        return false;
+                    }
+                }
+                return false;
+            }
+        });
 
-        // Création du serveur avec la configuration
         final SocketIOServer server = new SocketIOServer(config);
-
         return server;
     }
 }
