@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/private-conversations")
@@ -43,6 +44,22 @@ public class PrivateConversationController {
     public ResponseEntity<PrivateConversation> getPrivateConversationById(@PathVariable Integer id) {
         return privateConversationService.getPrivateConversationById(id)
                 .map(conversation -> new ResponseEntity<>(conversation, HttpStatus.OK))
+                .orElse(new ResponseEntity<>(null, HttpStatus.NOT_FOUND));
+    }
+
+    @GetMapping("/by-users")
+    @Operation(summary = "Récupérer une conversation privée par utilisateurs",
+            description = "Récupère la conversation privée entre deux utilisateurs")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Conversation trouvée"),
+            @ApiResponse(responseCode = "404", description = "Conversation non trouvée")
+    })
+    public ResponseEntity<PrivateConversation> getPrivateConversationByUsers(
+            @RequestParam Integer user1Id,
+            @RequestParam Integer user2Id) {
+        Optional<PrivateConversation> conversation = privateConversationService.getPrivateConversationByUsers(user1Id, user2Id);
+        return conversation
+                .map(value -> new ResponseEntity<>(value, HttpStatus.OK))
                 .orElse(new ResponseEntity<>(null, HttpStatus.NOT_FOUND));
     }
 
