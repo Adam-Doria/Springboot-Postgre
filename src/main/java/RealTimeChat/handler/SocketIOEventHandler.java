@@ -239,30 +239,30 @@ public class SocketIOEventHandler {
             }
         }
 
-        // On s'assure que les informations relatives aux salons ne sont pas mélangées
         message.setChatRoom(null);
         message.setChannelId(null);
 
-        // Sauvegarde du message en base
         Message savedMessage = messageService.saveMessage(message);
 
-        // Construction d'un payload simplifié pour éviter les problèmes de sérialisation (références circulaires, etc.)
-        HashMap<String, Object> payload = new HashMap<>();
-        payload.put("id", savedMessage.getId());
-        payload.put("content", savedMessage.getContent());
-        payload.put("senderName", savedMessage.getSender() != null ? savedMessage.getSender().getUsername() : "Unknown");
-        payload.put("conversationId", savedMessage.getPrivateConversation().getId());
+        if (savedMessage.getSender() != null &&
+                (savedMessage.getSender().getUsername() == null || savedMessage.getSender().getUsername().isEmpty())) {
+            Optional<User> fullSender = userService.getUserById(savedMessage.getSender().getId());
+            fullSender.ifPresent(savedMessage::setSender);
+        }
 
-        // Envoi du message au destinataire s'il est connecté
+        HashMap<String, Object> payload = new HashMap<>();
+        payload.put("Id", savedMessage.getId());
+        payload.put("Content", savedMessage.getContent());
+        payload.put("SenderName", savedMessage.getSender() != null ? savedMessage.getSender().getUsername() : "Unknown");
+        payload.put("ConversationId", savedMessage.getPrivateConversation().getId());
+
         SocketIOClient recipientClient = userSessions.get(savedMessage.getRecipient().getId());
         if (recipientClient != null) {
             recipientClient.sendEvent("new_message", payload);
         }
 
-        // Envoi également au client émetteur pour la synchro sur plusieurs appareils
         client.sendEvent("new_message", payload);
 
-        // Envoi de l'acknowledgement si demandé
         if (ackRequest.isAckRequested()) {
             ackRequest.sendAckData(savedMessage);
         }
