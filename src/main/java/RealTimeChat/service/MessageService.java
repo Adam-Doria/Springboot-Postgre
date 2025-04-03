@@ -2,8 +2,10 @@ package RealTimeChat.service;
 
 import RealTimeChat.model.Message;
 import RealTimeChat.model.User;
-import RealTimeChat.model.ChatRoom;
 import RealTimeChat.repository.MessageRepository;
+import RealTimeChat.service.PrivateConversationService;
+import RealTimeChat.model.PrivateConversation;
+import RealTimeChat.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,7 +15,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Service
 public class MessageService {
@@ -23,6 +24,13 @@ public class MessageService {
     
     @Autowired
     private ChatRoomService chatRoomService;
+
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private PrivateConversationService privateConversationService;
 
     @Transactional
     public Message saveMessage(Message message) {
@@ -53,14 +61,16 @@ public class MessageService {
                 .collect(Collectors.toList());
     }
 
+    public List<Message> getMessagesBetweenUsers(Integer userId1, Integer userId2) {
+        User user1 = userRepository.findById(userId1)
+                .orElseThrow(() -> new RuntimeException("Utilisateur 1 non trouvé"));
+        User user2 = userRepository.findById(userId2)
+                .orElseThrow(() -> new RuntimeException("Utilisateur 2 non trouvé"));
 
-    public List<Message> getMessagesBetweenUsers(User user1, User user2) {
-        List<Message> messagesFromUser1 = messageRepository.findBySenderAndRecipientOrderBySentAtAsc(user1, user2);
-        List<Message> messagesFromUser2 = messageRepository.findBySenderAndRecipientOrderBySentAtAsc(user2, user1);
+        PrivateConversation conversation = privateConversationService.findOrCreateConversation(userId1, userId2);
 
-        return Stream.concat(messagesFromUser1.stream(), messagesFromUser2.stream())
-                .sorted(Comparator.comparing(Message::getSentAt))
-                .collect(Collectors.toList());
+
+        return messageRepository.findByPrivateConversationIdOrderBySentAtAsc(conversation.getId());
     }
 
 

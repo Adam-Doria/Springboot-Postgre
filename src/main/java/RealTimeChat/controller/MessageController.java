@@ -75,6 +75,25 @@ public class MessageController {
         }
     }
 
+    @Operation(summary = "Récupérer les messages entre deux utilisateurs", description = "Renvoie la liste des messages échangés entre deux utilisateurs par ordre d'envoi")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Liste récupérée avec succès",
+                    content = @Content(schema = @Schema(implementation = Message.class))),
+            @ApiResponse(responseCode = "404", description = "Utilisateurs non trouvés ou aucun message")
+    })
+    @GetMapping("/private/{userId1}/{userId2}")
+    public ResponseEntity<List<Message>> getMessagesBetweenUsers(
+            @PathVariable Integer userId1,
+            @PathVariable Integer userId2
+    ) {
+        try {
+            List<Message> messages = messageService.getMessagesBetweenUsers(userId1, userId2);
+            return new ResponseEntity<>(messages, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+        }
+    }
+
     @Operation(summary = "Marquer un message comme lu", description = "Met à jour l'état du message pour indiquer qu'il a été lu")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Message mis à jour avec succès",
