@@ -161,8 +161,9 @@ public class SocketIOEventHandler {
 
     // Gestion des messages de salon
     private void handleChatRoomMessage(SocketIOClient client, Message message, AckRequest ackRequest) {
-        // Try to resolve chatRoom from channelId if needed
-        if (message.getChatRoom() == null && message.getChannelId() != null) {            Optional<ChatRoom> chatRoom = chatRoomService.getChatRoomById(message.getChannelId());
+        // Récupération ou résolution du chat room, comme dans votre code existant...
+        if (message.getChatRoom() == null && message.getChannelId() != null) {
+            Optional<ChatRoom> chatRoom = chatRoomService.getChatRoomById(message.getChannelId());
             if (chatRoom.isPresent()) {
                 message.setChatRoom(chatRoom.get());
             } else {
@@ -171,33 +172,37 @@ public class SocketIOEventHandler {
             }
         }
 
-        // Set channelId if only ChatRoom is set
         if (message.getChannelId() == null && message.getChatRoom() != null) {
             message.setChannelId(message.getChatRoom().getId());
             System.out.println("ℹ️ Set channelId from chatRoom: " + message.getChannelId());
         }
 
-        // Clean up private-related fields
+        // Nettoyage des champs relatifs aux messages privés
         message.setRecipient(null);
         message.setPrivateConversation(null);
 
-        // Save message to DB
+        // Sauvegarde du message dans la base de données
         Message savedMessage = messageService.saveMessage(message);
-        // Broadcast to room
-        String roomId = savedMessage.getChannelId().toString();
-        System.out.println("📡 Broadcasting message to room: " + roomId);
+
+        // Vérifier que le sender est entièrement chargé
+        if (savedMessage.getSender() != null && (savedMessage.getSender().getUsername() == null || savedMessage.getSender().getUsername().isEmpty())) {
+            // Recharger l'utilisateur complet
+            Optional<User> fullSender = userService.getUserById(savedMessage.getSender().getId());
+            fullSender.ifPresent(savedMessage::setSender);
+        }
+
+        // Préparation du payload avec le nom de l'expéditeur
         HashMap<String, Object> payload = new HashMap<>();
         payload.put("id", savedMessage.getId());
         payload.put("content", savedMessage.getContent());
-        payload.put("senderName",
-                savedMessage.getSender() != null ? savedMessage.getSender().getUsername() : "Unknown");
+        payload.put("senderName", savedMessage.getSender() != null ? savedMessage.getSender().getUsername() : "Unknown");
 
-        server.getRoomOperations(roomId.toString())
-                .sendEvent("new_message", payload);
+        // Diffusion du message dans la salle (room)
+        String roomId = savedMessage.getChannelId().toString();
+        server.getRoomOperations(roomId).sendEvent("new_message", payload);
 
         System.out.println("✅ Message broadcasted to room, message = " + payload);
 
-        // Acknowledge if needed
         if (ackRequest.isAckRequested()) {
             ackRequest.sendAckData(savedMessage);
             System.out.println("📨 Ack sent");
@@ -217,18 +222,16 @@ public class SocketIOEventHandler {
             throw new IllegalArgumentException("Le destinataire ou la conversation privée doit être spécifié");
         }
 
-        // Cas 1: Message avec recipient mais sans conversation
+        // Cas 1 : Si le destinataire est fourni mais pas la conversation privée, on la trouve ou la crée
         if (recipient != null && message.getPrivateConversation() == null) {
-            // Trouver ou créer une conversation privée
             PrivateConversation conversation =
                     privateConversationService.findOrCreateConversation(sender.getId(), recipient.getId());
             message.setPrivateConversation(conversation);
         }
 
-        // Cas 2: Message avec conversation mais sans recipient
+        // Cas 2 : Si la conversation privée est fournie mais pas le destinataire, on le déduit de la conversation
         if (message.getPrivateConversation() != null && recipient == null) {
             PrivateConversation conversation = message.getPrivateConversation();
-            // Déterminer qui est le destinataire en fonction de l'expéditeur
             if (conversation.getUser1().getId().equals(sender.getId())) {
                 message.setRecipient(conversation.getUser2());
             } else {
@@ -236,23 +239,30 @@ public class SocketIOEventHandler {
             }
         }
 
-        // S'assurer que des informations de salon ne sont pas mélangées
+        // On s'assure que les informations relatives aux salons ne sont pas mélangées
         message.setChatRoom(null);
         message.setChannelId(null);
 
-        // Sauvegarder le message dans la base de données
+        // Sauvegarde du message en base
         Message savedMessage = messageService.saveMessage(message);
 
-        // Envoyer au destinataire s'il est connecté
+        // Construction d'un payload simplifié pour éviter les problèmes de sérialisation (références circulaires, etc.)
+        HashMap<String, Object> payload = new HashMap<>();
+        payload.put("id", savedMessage.getId());
+        payload.put("content", savedMessage.getContent());
+        payload.put("senderName", savedMessage.getSender() != null ? savedMessage.getSender().getUsername() : "Unknown");
+        payload.put("conversationId", savedMessage.getPrivateConversation().getId());
+
+        // Envoi du message au destinataire s'il est connecté
         SocketIOClient recipientClient = userSessions.get(savedMessage.getRecipient().getId());
         if (recipientClient != null) {
-            recipientClient.sendEvent("new_message", savedMessage);
+            recipientClient.sendEvent("new_message", payload);
         }
 
-        // Aussi envoyer à l'expéditeur pour synchro sur plusieurs appareils
-        client.sendEvent("new_message", savedMessage);
+        // Envoi également au client émetteur pour la synchro sur plusieurs appareils
+        client.sendEvent("new_message", payload);
 
-        // Accusé de réception
+        // Envoi de l'acknowledgement si demandé
         if (ackRequest.isAckRequested()) {
             ackRequest.sendAckData(savedMessage);
         }
