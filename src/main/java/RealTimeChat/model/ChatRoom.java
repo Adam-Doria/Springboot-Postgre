@@ -8,17 +8,16 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 @Entity
-@Table(name="chat_rooms")
+@Table(name = "chat_rooms")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Schema(description = "Entité représentant un salon de discussion")
 public class ChatRoom {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Schema(description = "Identifiant unique auto-généré du salon")
@@ -67,6 +66,7 @@ public class ChatRoom {
         if (updatedAt == null) {
             updatedAt = LocalDateTime.now();
         }
+
         System.out.println("ChatRoom.prePersist - adminId: " + adminId);
     }
 

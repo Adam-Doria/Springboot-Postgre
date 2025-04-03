@@ -1,6 +1,8 @@
 package RealTimeChat.controller;
 
+import RealTimeChat.dto.ChatRoomMemberRequest;
 import RealTimeChat.model.ChatRoom;
+import RealTimeChat.model.ChatRoomMember;
 import RealTimeChat.model.User;
 import RealTimeChat.service.ChatRoomService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -14,6 +16,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/chatrooms")
@@ -30,26 +34,16 @@ public class ChatRoomController {
     @PostMapping
     public ResponseEntity<ChatRoom> createChatRoom(@RequestBody ChatRoom chatRoomRequest) {
         try {
-            // Récupérer l'ID de l'utilisateur à partir du token JWT
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             Integer userId = Integer.parseInt(authentication.getName());
-            
-            System.out.println("DEBUG - UserId extrait du token: " + userId);
-            
-            // Créer un nouveau salon en utilisant le constructeur personnalisé
+
             ChatRoom chatRoom = new ChatRoom(
                 chatRoomRequest.getName(),
                 chatRoomRequest.getDescription(),
-                userId  // Définir l'utilisateur courant comme administrateur
+                userId
             );
-            
-            System.out.println("DEBUG - AdminId du salon avant création: " + chatRoom.getAdminId());
-            
-            // Sauvegarder le salon
+
             ChatRoom created = chatRoomService.createChatRoom(chatRoom);
-            
-            System.out.println("DEBUG - AdminId du salon après création: " + created.getAdminId());
-            
             return new ResponseEntity<>(created, HttpStatus.CREATED);
         } catch (Exception e) {
             e.printStackTrace();
@@ -79,27 +73,32 @@ public class ChatRoomController {
     @Operation(summary = "Supprimer un salon de discussion par ID")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Chat room deleted successfully"),
-            @ApiResponse(responseCode = "403", description = "Unauthorized - Only admin can delete chat room"),
+            @ApiResponse(responseCode = "403", description = "User is not the admin of this chat room"),
             @ApiResponse(responseCode = "404", description = "Chat room not found")
     })
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteChatRoom(@PathVariable Integer id) {
+    public ResponseEntity<?> deleteChatRoom(@PathVariable Integer id) {
         try {
-            // Récupérer l'ID de l'utilisateur à partir du token JWT
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             Integer userId = Integer.parseInt(authentication.getName());
-            
-            // Vérifier si l'utilisateur est l'administrateur du salon
-            if (!chatRoomService.isUserChatRoomAdmin(id, userId)) {
-                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+
+            ChatRoom chatRoom = chatRoomService.getChatRoomById(id)
+                    .orElseThrow(() -> new RuntimeException("Salon non trouvé avec l'ID: " + id));
+
+            if (!userId.equals(chatRoom.getAdminId())) {
+                Map<String, String> response = new HashMap<>();
+                response.put("error", "Vous n'êtes pas autorisé à supprimer ce salon");
+                return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
             }
-            
-            // Si l'utilisateur est l'administrateur, supprimer le salon
+
             chatRoomService.deleteChatRoom(id);
             return new ResponseEntity<>(HttpStatus.OK);
+        } catch (RuntimeException e) {
+            Map<String, String> response = new HashMap<>();
+            response.put("error", e.getMessage());
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
         } catch (Exception e) {
-            e.printStackTrace();
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -108,13 +107,29 @@ public class ChatRoomController {
             @ApiResponse(responseCode = "200", description = "Users and chat room found"),
             @ApiResponse(responseCode = "404", description = "Chat room not found")
     })
-    @GetMapping("/{id}/users")
+    @GetMapping("/{id}/user")
     public ResponseEntity<List<User>> getAllUsersByChatRooms(@PathVariable Integer id) {
         try {
             List<User> users = chatRoomService.getAllUsersByChatRoom(id);
             return new ResponseEntity<>(users, HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @Operation(summary = "Ajouter un utilisateur à un salon")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Chat room member added successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid data")
+    })
+    @PostMapping("/{id}/user")
+    public ResponseEntity<List<User>> addUserToChatRooms(@PathVariable Integer id, @RequestBody ChatRoomMemberRequest request) {
+        try {
+            ChatRoomMember chatRoomMember = chatRoomService.addChatRoomMember(id, request.getUserId());
+            List<User> users = chatRoomService.getAllUsersByChatRoom(id);
+            return new ResponseEntity<>(users, HttpStatus.CREATED);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
     }
 }

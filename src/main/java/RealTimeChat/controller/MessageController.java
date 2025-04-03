@@ -15,6 +15,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -136,6 +137,36 @@ public class MessageController {
         } catch (Exception e) {
             e.printStackTrace();
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @Operation(summary = "Supprimer son propre message", 
+            description = "Permet à un utilisateur de supprimer uniquement ses propres messages")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Message supprimé avec succès"),
+            @ApiResponse(responseCode = "403", description = "L'utilisateur n'est pas l'auteur du message"),
+            @ApiResponse(responseCode = "404", description = "Message non trouvé")
+    })
+    @DeleteMapping("/own/{messageId}")
+    public ResponseEntity<?> deleteOwnMessage(@PathVariable Integer messageId) {
+        try {
+            // Récupérer l'ID de l'utilisateur à partir du token JWT
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            Integer userId = Integer.parseInt(authentication.getName());
+            
+            boolean deleted = messageService.deleteOwnMessage(messageId, userId);
+            
+            if (deleted) {
+                return new ResponseEntity<>(HttpStatus.OK);
+            } else {
+                Map<String, String> response = new HashMap<>();
+                response.put("error", "Vous n'êtes pas autorisé à supprimer ce message");
+                return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
+            }
+        } catch (RuntimeException e) {
+            Map<String, String> response = new HashMap<>();
+            response.put("error", e.getMessage());
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
         }
     }
 }

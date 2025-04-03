@@ -143,4 +143,25 @@ public class MessageService {
     public void deleteMessage(Integer messageId) {
         messageRepository.deleteById(messageId);
     }
+
+    /**
+     * Supprime un message si l'utilisateur est l'auteur du message
+     * @param messageId ID du message à supprimer
+     * @param userId ID de l'utilisateur qui tente de supprimer le message
+     * @return true si le message a été supprimé, false si l'utilisateur n'est pas l'auteur
+     * @throws RuntimeException si le message n'est pas trouvé
+     */
+    @Transactional
+    public boolean deleteOwnMessage(Integer messageId, Integer userId) {
+        Message message = messageRepository.findById(messageId)
+                .orElseThrow(() -> new RuntimeException("Message non trouvé avec l'ID: " + messageId));
+        
+        // Vérifier si l'utilisateur est l'auteur du message
+        if (message.getSender() != null && message.getSender().getId().equals(userId)) {
+            messageRepository.delete(message);
+            return true;
+        }
+        
+        return false;
+    }
 }
