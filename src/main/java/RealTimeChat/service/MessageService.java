@@ -2,6 +2,7 @@ package RealTimeChat.service;
 
 import RealTimeChat.model.Message;
 import RealTimeChat.model.User;
+import RealTimeChat.model.ChatRoom;
 import RealTimeChat.repository.MessageRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -10,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -18,6 +20,9 @@ public class MessageService {
 
     @Autowired
     private MessageRepository messageRepository;
+    
+    @Autowired
+    private ChatRoomService chatRoomService;
 
     @Transactional
     public Message saveMessage(Message message) {
@@ -100,6 +105,38 @@ public class MessageService {
         message.setIsEdited(true);
         // La mise à jour de updatedAt se fait automatiquement via @PreUpdate
         return messageRepository.save(message);
+    }
+
+    /**
+     * Vérifie si un utilisateur est autorisé à supprimer un message.
+     * Un utilisateur peut supprimer un message s'il en est l'expéditeur ou
+     * s'il est l'administrateur du salon dans lequel le message a été posté.
+     * 
+     * @param messageId L'ID du message à vérifier
+     * @param userId L'ID de l'utilisateur qui tente de supprimer le message
+     * @return true si l'utilisateur est autorisé à supprimer le message, false sinon
+     */
+    public boolean canDeleteMessage(Integer messageId, Integer userId) {
+        Optional<Message> messageOpt = messageRepository.findById(messageId);
+        
+        if (messageOpt.isEmpty()) {
+            return false;
+        }
+        
+        Message message = messageOpt.get();
+        
+        // L'expéditeur du message peut toujours le supprimer
+        if (message.getSender() != null && message.getSender().getId().equals(userId)) {
+            return true;
+        }
+        
+        // Si le message est dans un salon, vérifier si l'utilisateur est l'admin du salon
+        if (message.getChatRoom() != null) {
+            return chatRoomService.isUserChatRoomAdmin(message.getChatRoom().getId(), userId);
+        }
+        
+        // Dans les autres cas (messages privés), seul l'expéditeur peut supprimer
+        return false;
     }
 
     @Transactional

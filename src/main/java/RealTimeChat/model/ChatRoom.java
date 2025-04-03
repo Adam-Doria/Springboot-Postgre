@@ -48,6 +48,17 @@ public class ChatRoom {
     @Schema(description = "Liste des messages associés à ce salon")
     private List<Message> messages = new ArrayList<>();
 
+    /**
+     * Constructeur personnalisé pour créer un salon avec un admin spécifié
+     */
+    public ChatRoom(String name, String description, Integer adminId) {
+        this.name = name;
+        this.description = description;
+        this.adminId = adminId;
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
+
     @PrePersist
     public void prePersist() {
         if (createdAt == null) {
@@ -56,6 +67,7 @@ public class ChatRoom {
         if (updatedAt == null) {
             updatedAt = LocalDateTime.now();
         }
+        System.out.println("ChatRoom.prePersist - adminId: " + adminId);
     }
 
     @PreUpdate
