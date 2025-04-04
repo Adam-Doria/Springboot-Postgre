@@ -42,6 +42,9 @@ L'application sera accessible sur http://localhost:8080/swagger-ui/index.html
 
 La documentation de l'application  sera accessible sur http://localhost:8080
 
+## Schéma de la base de donnée 
+https://drawsql.app/teams/chat-10/diagrams/ey
+
 
 ## Exemple d'utilisation avec cURL
 
