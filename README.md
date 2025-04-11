@@ -1,7 +1,7 @@
 # Spring Boot PostgreSQL Docker Demo
 
 Ce projet est une application Spring Boot avec PostgreSQL, conteneurisée via Docker.
-Sprint Initializer a été  utilisé pour initiliaser le projet.
+Spring Initializer a été  utilisé pour initiliaser le projet.
 
 ## Prérequis
 
